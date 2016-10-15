@@ -88,9 +88,15 @@ class Conditional:
 
     def evaluate(self, scope):
         if self.condition.evaluate(scope).value != 0:
-            return self.if_true.evaluate(scope)
+            s = None
+            for operation in self.if_true:
+                s = operation.evaluate(scope)
+            return s
         else:
-            return self.if_false.evaluate(scope)
+            s = None
+            for operation in self.if_false:
+                s = operation.evaluate(scope)
+            return s
 
 
 class Print:
@@ -167,7 +173,7 @@ class BinaryOperation:
     binary_ops = {'+': lambda a, b: a + b,
                   '-': lambda a, b: a - b,
                   '*': lambda a, b: a * b,
-                  '/': lambda a, b: a / b,
+                  '/': lambda a, b: a // b,
                   '%': lambda a, b: a % b,
                   '==': lambda a, b: a == b,
                   '!=': lambda a, b: a != b,
@@ -242,7 +248,9 @@ def test_var_add_and_read():
     Read('a').evaluate(scope)
     print ("Должно получиться -a-1")
     Print(BinaryOperation(
-                 UnaryOperation('-', Number(1)).evaluate(scope),
+                 UnaryOperation(
+                     '-',
+                     Number(1)).evaluate(scope),
                  '-',
                  Reference('a'))
           ).evaluate(scope)
@@ -257,9 +265,12 @@ def test_if():
     print ("Введите s")
     Read('s').evaluate(scope)
     print ("Если s>=2, то выводится 1, иначе 0")
-    Conditional(BinaryOperation(Number(2), '<=', Reference('s')),
-                Print(Number(1)),
-                Print(Number(0))
+    Conditional(BinaryOperation(
+                   Number(2),
+                   '<=',
+                   Reference('s')), [
+                       Print(Number(1))], [
+                       Print(Number(0))]
                 ).evaluate(scope)
     print()
 
@@ -305,11 +316,12 @@ def test_scope():
     FunctionCall(FunctionDefinition('foo',
                                     Function([], [
                                         Read('n'),
-                                        Print(BinaryOperation(Reference('n'),
-                                                              '/',
-                                                              Reference('k')))
-                                                 ])), [
-                                                      ],
+                                        Print(BinaryOperation(
+                                                 Reference('n'),
+                                                 '/',
+                                                 Reference('k'))
+                                              )])
+                                    ), [],
                  ).evaluate(scope)
     print("Должно было получиться частное второго n и k")
     print("А теперь выведем первое n,")
@@ -327,7 +339,7 @@ def test_empty_func():
     print("Посмотрим, что возвращает пустая функция")
     res = FunctionCall(FunctionDefinition('foo',
                                           Function(['x'], [])), [
-                                              Number(5)]
+                                          Number(5)]
                        ).evaluate(scope)
     print(res)
     print("Она возвращает то, что должна")
