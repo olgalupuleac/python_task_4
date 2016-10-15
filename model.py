@@ -233,18 +233,18 @@ def example():
 def test_mult_and_print():
     scope = Scope()
     mult = BinaryOperation(Number(5), '*', Number(2))
-    print ("Проверяем сложение и Print")
+    print("Проверяем сложение и Print")
     print("сейчас должно будет вывестись 10 два раза,")
     print("так как вызывается Print от Print")
     Print(Print(mult)).evaluate(scope)
-    print ("Мы проверили Number, '*' и странный вызов Print,")
+    print("Мы проверили Number, '*' и странный вызов Print,")
     print("нормальный Print будет часто использоваться далее")
     print()
 
 
 def test_var_add_and_read():
     scope = Scope()
-    print ("Введите a")
+    print("Введите a")
     Read('a').evaluate(scope)
     print ("Должно получиться -a-1")
     Print(BinaryOperation(
@@ -262,9 +262,9 @@ def test_var_add_and_read():
 
 def test_if():
     scope = Scope()
-    print ("Введите s")
+    print("Введите s")
     Read('s').evaluate(scope)
-    print ("Если s>=2, то выводится 1, иначе 0")
+    print("Если s>=2, то выводится 1, иначе 0")
     Conditional(BinaryOperation(
                    Number(2),
                    '<=',
@@ -334,15 +334,28 @@ def test_scope():
     print()
 
 
-def test_empty_func():
+def test_empty_func_and_conditional():
     scope = Scope()
     print("Посмотрим, что возвращает пустая функция")
+    print("и пустые ветки conditional")
     res = FunctionCall(FunctionDefinition('foo',
                                           Function(['x'], [])), [
                                           Number(5)]
                        ).evaluate(scope)
     print(res)
-    print("Она возвращает то, что должна")
+    res=Conditional(BinaryOperation(
+                   Number(2),
+                   '<=',
+                   Number(6)), [], []
+                ).evaluate(scope)
+    print(res)
+    res=Conditional(BinaryOperation(
+                   Number(2),
+                   '<=',
+                   Number(0)), [], []
+                ).evaluate(scope)
+    print(res)
+    print("Они возвращает то, что должны")
     print()
 
 
@@ -381,6 +394,6 @@ if __name__ == '__main__':
     print("Одна ветка Conditional точно проверена")
     print("Теперь повторите всё снова, чтобы проверялась вторая")
     test_if()
-    test_empty_func()
+    test_empty_func_and_conditional()
     test_trash_func()
     print("Это всё. Спасибо за внимание!")
