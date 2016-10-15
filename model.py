@@ -8,7 +8,6 @@ class Scope:
 
     def __init__(self, parent=None):
         self.parent = parent
-        d = {}
         self.d = {}
 
     def __getitem__(self, name):
@@ -26,7 +25,7 @@ class Number:
     Все числа в нашем языке целые."""
 
     def __init__(self, value):
-        self.value = value
+        self.value = int(value)
 
     def evaluate(self, scope):
         return self
@@ -88,7 +87,7 @@ class Conditional:
         self.if_false = if_false
 
     def evaluate(self, scope):
-        if self.condition.evaluate(scope).value:
+        if self.condition.evaluate(scope).value != 0:
             return self.if_true.evaluate(scope)
         else:
             return self.if_false.evaluate(scope)
@@ -102,8 +101,9 @@ class Print:
         self.expr = expr
 
     def evaluate(self, scope):
-        print (self.expr.evaluate(scope).value)
-        return self.expr.evaluate(scope)
+        val = self.expr.evaluate(scope)
+        print(val.value)
+        return val
 
 
 class Read:
@@ -138,11 +138,11 @@ class FunctionCall:
         self.args = args
 
     def evaluate(self, scope):
-        s = Scope(scope)
-        function = self.fun_expr.evaluate(s)
-        for arg, val in list(zip(function.args, self.args)):
-            s[arg] = val.evaluate(scope)
-        return function.evaluate(s)
+        call_scope = Scope(scope)
+        function = self.fun_expr.evaluate(call_scope)
+        for arg, val in zip(function.args, self.args):
+            call_scope[arg] = val.evaluate(scope)
+        return function.evaluate(call_scope)
 
 
 class Reference:
@@ -157,21 +157,6 @@ class Reference:
         return scope[self.name]
 
 
-binary_ops = {'+': lambda a, b: a + b,
-              '-': lambda a, b: a - b,
-              '*': lambda a, b: a * b,
-              '/': lambda a, b: a / b,
-              '%': lambda a, b: a % b,
-              '==': lambda a, b: a == b,
-              '!=': lambda a, b: a != b,
-              '<': lambda a, b: a < b,
-              '>': lambda a, b: a > b,
-              '<=': lambda a, b: a <= b,
-              '>=': lambda a, b: a >= b,
-              '&&': lambda a, b: a and b,
-              '||': lambda a, b: a or b}
-
-
 class BinaryOperation:
 
     """BinaryOperation - представляет бинарную операцию над двумя выражениями.
@@ -179,6 +164,19 @@ class BinaryOperation:
     Поддерживаемые операции:
     “+”, “-”, “*”, “/”, “%”, “==”, “!=”,
     “<”, “>”, “<=”, “>=”, “&&”, “||”."""
+    binary_ops = {'+': lambda a, b: a + b,
+                  '-': lambda a, b: a - b,
+                  '*': lambda a, b: a * b,
+                  '/': lambda a, b: a / b,
+                  '%': lambda a, b: a % b,
+                  '==': lambda a, b: a == b,
+                  '!=': lambda a, b: a != b,
+                  '<': lambda a, b: a < b,
+                  '>': lambda a, b: a > b,
+                  '<=': lambda a, b: a <= b,
+                  '>=': lambda a, b: a >= b,
+                  '&&': lambda a, b: a and b,
+                  '||': lambda a, b: a or b}
 
     def __init__(self, lhs, op, rhs):
         self.lhs = lhs
@@ -186,12 +184,9 @@ class BinaryOperation:
         self.rhs = rhs
 
     def evaluate(self, scope):
-        return Number(binary_ops[self.op](self.lhs.evaluate(scope).value,
-                      self.rhs.evaluate(scope).value))
-
-
-unary_ops = {'-': lambda a: -a,
-             '!': lambda a: not a}
+        lhs = self.lhs.evaluate(scope).value
+        rhs = self.rhs.evaluate(scope).value
+        return Number(self.binary_ops[self.op](lhs, rhs))
 
 
 class UnaryOperation:
@@ -200,12 +195,16 @@ class UnaryOperation:
     Результатом вычисления унарной операции является объект Number.
     Поддерживаемые операции: “-”, “!”."""
 
+    unary_ops = {'-': lambda a: -a,
+                 '!': lambda a: not a}
+
     def __init__(self, op, expr):
         self.op = op
         self.expr = expr
 
     def evaluate(self, scope):
-        return Number(unary_ops[self.op](self.expr.evaluate(scope).value))
+        arg = self.expr.evaluate(scope).value
+        return Number(self.unary_ops[self.op](arg))
 
 
 def example():
@@ -222,40 +221,154 @@ def example():
     print('It should print 2: ', end=' ')
     FunctionCall(FunctionDefinition('foo', parent['foo']),
                  [Number(5), UnaryOperation('-', Number(3))]).evaluate(scope)
+    print()
 
 
-def test_add_and_print():
+def test_mult_and_print():
     scope = Scope()
-    add = BinaryOperation(Number(1), '+', Number(2))
-    add.evaluate(scope)
-    print ("It should be 3")
-    p = Print(add)
-    p.evaluate(scope)
+    mult = BinaryOperation(Number(5), '*', Number(2))
+    print ("Проверяем сложение и Print")
+    print("сейчас должно будет вывестись 10 два раза,")
+    print("так как вызывается Print от Print")
+    Print(Print(mult)).evaluate(scope)
+    print ("Мы проверили Number, '*' и странный вызов Print,")
+    print("нормальный Print будет часто использоваться далее")
+    print()
 
 
 def test_var_add_and_read():
     scope = Scope()
-    read = Read('n')
-    read.evaluate(scope)
-    a = UnaryOperation('-', Number(1))
-    add = BinaryOperation(a.evaluate(scope), '+', Reference('n'))
-    print ("It should be n-1")
-    write = Print(add)
-    write.evaluate(scope)
+    print ("Введите a")
+    Read('a').evaluate(scope)
+    print ("Должно получиться -a-1")
+    Print(BinaryOperation(
+                 UnaryOperation('-', Number(1)).evaluate(scope),
+                 '-',
+                 Reference('a'))
+          ).evaluate(scope)
+    print("Мы проверили Read, Reference,")
+    print("унарный '-', а также нормальный Print")
+    print("и бинарный '-'")
+    print()
 
 
 def test_if():
     scope = Scope()
-    read = Read('n')
-    read.evaluate(scope)
-    print ("It should be result of 2 <= n")
-    le = Conditional(BinaryOperation(Number(2), '<=',
-                     Reference('n')), Print(Number(1)), Print(Number(0)))
-    le.evaluate(scope)
+    print ("Введите s")
+    Read('s').evaluate(scope)
+    print ("Если s>=2, то выводится 1, иначе 0")
+    Conditional(BinaryOperation(Number(2), '<=', Reference('s')),
+                Print(Number(1)),
+                Print(Number(0))
+                ).evaluate(scope)
+    print()
+
+
+def test_logical_ops():
+    scope = Scope()
+    assert Number(1) == BinaryOperation(Number(1), '<',
+                                        Number(2)).evaluate(scope)
+    assert Number(0) == BinaryOperation(Number(1), '>=',
+                                        Number(2)).evaluate(scope)
+    assert Number(1) == BinaryOperation(Number(2), '<=',
+                                        Number(2)).evaluate(scope)
+    assert Number(0) == BinaryOperation(Number(1), '>',
+                                        Number(2)).evaluate(scope)
+    assert Number(1) == BinaryOperation(Number(1), '<',
+                                        Number(2)).evaluate(scope)
+    assert Number(1) == BinaryOperation(Number(1), '!=',
+                                        Number(2)).evaluate(scope)
+    assert Number(0) == BinaryOperation(Number(1), '==',
+                                        Number(2)).evaluate(scope)
+    assert Number(0) == BinaryOperation(Number(0), '&&',
+                                        Number(2)).evaluate(scope)
+    assert Number(1) == BinaryOperation(Number(-5), '||',
+                                        Number(0)).evaluate(scope)
+    assert Number(1) == UnaryOperation('!',
+                                       Number(0)).evaluate(scope)
+    assert Number(0) == UnaryOperation('!',
+                                       Number(-5)).evaluate(scope)
+    print("Мы только что проверили все логические операции при помощи assert")
+    print("Если программа не упала, то они правильно работают")
+    print()
+
+
+def test_scope():
+    scope = Scope()
+    print("Введите число, которое будет называться n")
+    Read('n').evaluate(scope)
+    print("А теперь введите ненулевое k")
+    Read('k').evaluate(scope)
+    print("Сейчас снова потребуется ввести n,")
+    print("для проверки лучше, если оно на несколько порядков отличается")
+    print("от первого n или другого с ним знака")
+    FunctionCall(FunctionDefinition('foo',
+                                    Function([], [
+                                        Read('n'),
+                                        Print(BinaryOperation(Reference('n'),
+                                                              '/',
+                                                              Reference('k')))
+                                                 ])), [
+                                                      ],
+                 ).evaluate(scope)
+    print("Должно было получиться частное второго n и k")
+    print("А теперь выведем первое n,")
+    print("чтобы проверить, что с ним всё в порядке")
+    Print(Reference('n')).evaluate(scope)
+    print("Вывод: scope отлично работает,")
+    print("значение переменных сначала ищутся в call_scope,")
+    print("а потом в родительском scope")
+    print("Ещё мы проверили '/' и вызов функции без аргументов")
+    print()
+
+
+def test_empty_func():
+    scope = Scope()
+    print("Посмотрим, что возвращает пустая функция")
+    res = FunctionCall(FunctionDefinition('foo',
+                                          Function(['x'], [])), [
+                                              Number(5)]
+                       ).evaluate(scope)
+    print(res)
+    print("Она возвращает то, что должна")
+    print()
+
+
+def test_trash_func():
+    scope = Scope()
+    print ("Введите по очереди два числа")
+    FunctionDefinition('foo',
+                       Function([], [
+                           FunctionDefinition('bar', Function([], [
+                               Read('a'),
+                               Read('b'),
+                               BinaryOperation(
+                                  Reference('a'),
+                                  '%',
+                                  Reference('b'))
+                           ]))
+                       ])
+                       ).evaluate(scope)
+    Print(FunctionCall(FunctionCall(Reference('foo'), []), [])).evaluate(scope)
+    print("Функция foo вернула функцию bar,")
+    print("которая считала два числа и посчитала остаток первого")
+    print("по модулю второго")
+    print()
 
 
 if __name__ == '__main__':
     example()
-    test_add_and_print()
+    print("В примере проверился вызов функции от аргументов")
+    print("а также операция '+'")
+    test_mult_and_print()
     test_var_add_and_read()
+    test_logical_ops
+    test_scope()
+    print("Проверим Conditional")
     test_if()
+    print("Одна ветка Conditional точно проверена")
+    print("Теперь повторите всё снова, чтобы проверялась вторая")
+    test_if()
+    test_empty_func()
+    test_trash_func()
+    print("Это всё. Спасибо за внимание!")
