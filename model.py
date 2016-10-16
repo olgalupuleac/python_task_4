@@ -90,13 +90,13 @@ class Conditional:
         if self.condition.evaluate(scope).value != 0:
             s = None
             for operation in self.if_true:
-                if operation != None:
+                if operation is not None:
                     s = operation.evaluate(scope)
             return s
         else:
             s = None
             for operation in self.if_false:
-                if operation != None:
+                if operation is not None:
                     s = operation.evaluate(scope)
             return s
 
@@ -368,7 +368,7 @@ def test_empty_func_and_conditional():
                         [Number(5)]
                        ).evaluate(scope)
     print(res)
-    res=Conditional(BinaryOperation(
+    res = Conditional(BinaryOperation(
                        Number(2),
                        '<=',
                        Number(6)
@@ -377,7 +377,7 @@ def test_empty_func_and_conditional():
                     []
                     ).evaluate(scope)
     print(res)
-    res=Conditional(BinaryOperation(
+    res = Conditional(BinaryOperation(
                        Number(2),
                        '<=',
                        Number(0)
@@ -386,7 +386,7 @@ def test_empty_func_and_conditional():
                     []
                    ).evaluate(scope)
     print(res)
-    res=Conditional(BinaryOperation(
+    res = Conditional(BinaryOperation(
                        Number(2),
                        '<=',
                        Number(6)
@@ -395,7 +395,7 @@ def test_empty_func_and_conditional():
                     [None]
                     ).evaluate(scope)
     print(res)
-    res=Conditional(BinaryOperation(
+    res = Conditional(BinaryOperation(
                        Number(2),
                        '<=',
                        Number(0)
