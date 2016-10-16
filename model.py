@@ -90,12 +90,14 @@ class Conditional:
         if self.condition.evaluate(scope).value != 0:
             s = None
             for operation in self.if_true:
-                s = operation.evaluate(scope)
+                if operation != None:
+                    s = operation.evaluate(scope)
             return s
         else:
             s = None
             for operation in self.if_false:
-                s = operation.evaluate(scope)
+                if operation != None:
+                    s = operation.evaluate(scope)
             return s
 
 
@@ -215,16 +217,16 @@ class UnaryOperation:
 
 def example():
     parent = Scope()
-    parent["foo"] = Function(('hello', 'world'),
+    parent['foo'] = Function(('hello', 'world'),
                              [Print(BinaryOperation(Reference('hello'),
                                                     '+',
                                                     Reference('world')))])
-    parent["bar"] = Number(10)
+    parent['bar'] = Number(10)
     scope = Scope(parent)
-    assert 10 == scope["bar"].value
-    scope["bar"] = Number(20)
-    assert scope["bar"].value == 20
-    print('It should print 2: ', end=' ')
+    assert 10 == scope['bar'].value
+    scope['bar'] = Number(20)
+    assert scope['bar'].value == 20
+    print("It should print 2: ", end=' ')
     FunctionCall(FunctionDefinition('foo', parent['foo']),
                  [Number(5), UnaryOperation('-', Number(3))]).evaluate(scope)
     print()
@@ -242,17 +244,16 @@ def test_mult_and_print():
     print()
 
 
-def test_var_add_and_read():
+def test_var_minus_and_read():
     scope = Scope()
     print("Введите a")
     Read('a').evaluate(scope)
-    print ("Должно получиться -a-1")
+    print("Должно получиться -a-1")
     Print(BinaryOperation(
-                 UnaryOperation(
-                     '-',
-                     Number(1)).evaluate(scope),
+                 UnaryOperation('-',Number(1)),
                  '-',
-                 Reference('a'))
+                 Reference('a')
+                         )
           ).evaluate(scope)
     print("Мы проверили Read, Reference,")
     print("унарный '-', а также нормальный Print")
@@ -268,37 +269,57 @@ def test_if():
     Conditional(BinaryOperation(
                    Number(2),
                    '<=',
-                   Reference('s')), [
-                       Print(Number(1))], [
-                       Print(Number(0))]
+                   Reference('s')
+                                ), [Print(Number(1))],
+                                   [Print(Number(0))]
                 ).evaluate(scope)
     print()
 
 
 def test_logical_ops():
     scope = Scope()
-    assert Number(1) == BinaryOperation(Number(1), '<',
-                                        Number(2)).evaluate(scope)
-    assert Number(0) == BinaryOperation(Number(1), '>=',
-                                        Number(2)).evaluate(scope)
-    assert Number(1) == BinaryOperation(Number(2), '<=',
-                                        Number(2)).evaluate(scope)
-    assert Number(0) == BinaryOperation(Number(1), '>',
-                                        Number(2)).evaluate(scope)
-    assert Number(1) == BinaryOperation(Number(1), '<',
-                                        Number(2)).evaluate(scope)
-    assert Number(1) == BinaryOperation(Number(1), '!=',
-                                        Number(2)).evaluate(scope)
-    assert Number(0) == BinaryOperation(Number(1), '==',
-                                        Number(2)).evaluate(scope)
-    assert Number(0) == BinaryOperation(Number(0), '&&',
-                                        Number(2)).evaluate(scope)
-    assert Number(1) == BinaryOperation(Number(-5), '||',
-                                        Number(0)).evaluate(scope)
-    assert Number(1) == UnaryOperation('!',
-                                       Number(0)).evaluate(scope)
-    assert Number(0) == UnaryOperation('!',
-                                       Number(-5)).evaluate(scope)
+    assert 1 == BinaryOperation(Number(1),
+                                '<',
+                                Number(2)
+                                ).evaluate(scope).value
+    assert 0 == BinaryOperation(Number(1),
+                                '>=',
+                                Number(2)
+                                ).evaluate(scope).value
+    assert 1 == BinaryOperation(Number(2),
+                                '<=',
+                                Number(2)
+                                ).evaluate(scope).value
+    assert 0 == BinaryOperation(Number(1),
+                                '>',
+                                Number(2)
+                                ).evaluate(scope).value
+    assert 1 == BinaryOperation(Number(4),
+                                '<',
+                                Number(6)
+                                ).evaluate(scope).value
+    assert 1 == BinaryOperation(Number(5),
+                                '!=',
+                                Number(2)
+                                ).evaluate(scope).value
+    assert 0 == BinaryOperation(Number(1),
+                                '==',
+                                Number(2)
+                                ).evaluate(scope).value
+    assert 0 == BinaryOperation(Number(8),
+                                '&&',
+                                Number(0)
+                                ).evaluate(scope).value
+    assert 0 != BinaryOperation(Number(-5),
+                                '||',
+                                Number(0)
+                                ).evaluate(scope).value
+    assert 1 == UnaryOperation('!',
+                               Number(0)
+                               ).evaluate(scope).value
+    assert 0 == UnaryOperation('!',
+                               Number(-5)
+                               ).evaluate(scope).value
     print("Мы только что проверили все логические операции при помощи assert")
     print("Если программа не упала, то они правильно работают")
     print()
@@ -319,8 +340,11 @@ def test_scope():
                                         Print(BinaryOperation(
                                                  Reference('n'),
                                                  '/',
-                                                 Reference('k'))
-                                              )])
+                                                 Reference('k')
+                                                              )
+                                              )
+                                                  ]
+                                             )
                                     ), [],
                  ).evaluate(scope)
     print("Должно было получиться частное второго n и k")
@@ -339,27 +363,52 @@ def test_empty_func_and_conditional():
     print("Посмотрим, что возвращает пустая функция")
     print("и пустые ветки conditional")
     res = FunctionCall(FunctionDefinition('foo',
-                                          Function(['x'], [])), [
-                                          Number(5)]
+                                           Function(['x'], [])
+                                          ),
+                        [Number(5)]
                        ).evaluate(scope)
     print(res)
     res=Conditional(BinaryOperation(
-                   Number(2),
-                   '<=',
-                   Number(6)), [], []
-                ).evaluate(scope)
+                       Number(2),
+                       '<=',
+                       Number(6)
+                                   ),
+                    [],
+                    []
+                    ).evaluate(scope)
     print(res)
     res=Conditional(BinaryOperation(
-                   Number(2),
-                   '<=',
-                   Number(0)), [], []
-                ).evaluate(scope)
+                       Number(2),
+                       '<=',
+                       Number(0)
+                                    ),
+                    [],
+                    []
+                   ).evaluate(scope)
+    print(res)
+    res=Conditional(BinaryOperation(
+                       Number(2),
+                       '<=',
+                       Number(6)
+                                   ),
+                    [None],
+                    [None]
+                    ).evaluate(scope)
+    print(res)
+    res=Conditional(BinaryOperation(
+                       Number(2),
+                       '<=',
+                       Number(0)
+                                    ),
+                    [None],
+                    [None]
+                   ).evaluate(scope)
     print(res)
     print("Они возвращает то, что должны")
     print()
 
 
-def test_trash_func():
+def test_func_in_func():
     scope = Scope()
     print ("Введите по очереди два числа")
     FunctionDefinition('foo',
@@ -386,8 +435,8 @@ if __name__ == '__main__':
     print("В примере проверился вызов функции от аргументов")
     print("а также операция '+'")
     test_mult_and_print()
-    test_var_add_and_read()
-    test_logical_ops
+    test_var_minus_and_read()
+    test_logical_ops()
     test_scope()
     print("Проверим Conditional")
     test_if()
@@ -395,5 +444,5 @@ if __name__ == '__main__':
     print("Теперь повторите всё снова, чтобы проверялась вторая")
     test_if()
     test_empty_func_and_conditional()
-    test_trash_func()
+    test_func_in_func()
     print("Это всё. Спасибо за внимание!")
