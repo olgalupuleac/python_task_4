@@ -89,14 +89,14 @@ class Conditional:
     def evaluate(self, scope):
         if self.condition.evaluate(scope).value != 0:
             s = None
-            for operation in self.if_true:
-                if operation is not None:
+            if self.if_true is not None:
+                for operation in self.if_true:
                     s = operation.evaluate(scope)
             return s
         else:
             s = None
-            for operation in self.if_false:
-                if operation is not None:
+            if self.if_false is not None:
+                for operation in self.if_false:
                     s = operation.evaluate(scope)
             return s
 
@@ -363,9 +363,9 @@ def test_empty_func_and_conditional():
     print("Посмотрим, что возвращает пустая функция")
     print("и пустые ветки conditional")
     res = FunctionCall(FunctionDefinition('foo',
-                                           Function(['x'], [])
+                                          Function(['x'], [])
                                           ),
-                        [Number(5)]
+                       [Number(5)]
                        ).evaluate(scope)
     print(res)
     res = Conditional(BinaryOperation(
@@ -373,36 +373,36 @@ def test_empty_func_and_conditional():
                        '<=',
                        Number(6)
                                    ),
-                    [],
-                    []
-                    ).evaluate(scope)
+                       [],
+                       []
+                      ).evaluate(scope)
     print(res)
     res = Conditional(BinaryOperation(
                        Number(2),
                        '<=',
                        Number(0)
                                     ),
-                    [],
-                    []
-                   ).evaluate(scope)
+                       [],
+                       []
+                      ).evaluate(scope)
     print(res)
     res = Conditional(BinaryOperation(
                        Number(2),
                        '<=',
                        Number(6)
                                    ),
-                    [None],
-                    [None]
-                    ).evaluate(scope)
+                       None,
+                       None
+                      ).evaluate(scope)
     print(res)
     res = Conditional(BinaryOperation(
                        Number(2),
                        '<=',
                        Number(0)
                                     ),
-                    [None],
-                    [None]
-                   ).evaluate(scope)
+                       None,
+                       None
+                      ).evaluate(scope)
     print(res)
     print("Они возвращает то, что должны")
     print()
@@ -410,7 +410,7 @@ def test_empty_func_and_conditional():
 
 def test_func_in_func():
     scope = Scope()
-    print ("Введите по очереди два числа")
+    print("Введите по очереди два числа")
     FunctionDefinition('foo',
                        Function([], [
                            FunctionDefinition('bar', Function([], [
