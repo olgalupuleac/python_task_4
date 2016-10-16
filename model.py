@@ -250,7 +250,7 @@ def test_var_minus_and_read():
     Read('a').evaluate(scope)
     print("Должно получиться -a-1")
     Print(BinaryOperation(
-                 UnaryOperation('-',Number(1)),
+                 UnaryOperation('-', Number(1)),
                  '-',
                  Reference('a')
                          )
